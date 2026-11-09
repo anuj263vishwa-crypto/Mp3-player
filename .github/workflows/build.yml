@@ -1,8 +1,10 @@
 name: Build APK
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,8 +14,22 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: 8.9 }
-      - run: gradle assembleDebug --no-daemon
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Beats-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Build
+        run: gradle assembleDebug --no-daemon --stacktrace > build.log 2>&1 || touch FAILED
+      - name: Publish log
+        if: always()
+        run: |
+          git config user.name ci && git config user.email ci@example.com
+          git checkout -q -B buildlog
+          git add -f build.log
+          git commit -qm "build log" || true
+          git push -f origin buildlog
+      - name: Fail if build failed
+        run: test ! -f FAILED
+      - name: Release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk Beats.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest Beats.apk --title "Beats APK" --notes "Latest build" --target main
