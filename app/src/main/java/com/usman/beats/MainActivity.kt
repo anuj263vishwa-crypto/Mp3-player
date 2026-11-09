@@ -41,11 +41,10 @@ data class Song(val id: Long, val title: String, val artist: String, val dur: Lo
 
 fun loadSongs(ctx: Context): List<Song> {
     val out = mutableListOf<Song>()
-    val A = MediaStore.Audio.Media
-    val proj = arrayOf(A._ID, A.TITLE, A.ARTIST, A.DURATION, A.RELATIVE_PATH)
+    val proj = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.RELATIVE_PATH)
     ctx.contentResolver.query(
-        A.EXTERNAL_CONTENT_URI, proj,
-        "${A.IS_MUSIC} != 0 OR ${A.MIME_TYPE} = 'audio/mpeg'", null, "${A.TITLE} COLLATE NOCASE"
+        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, proj,
+        "${MediaStore.Audio.Media.IS_MUSIC} != 0 OR ${MediaStore.Audio.Media.MIME_TYPE} = 'audio/mpeg'", null, "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE"
     )?.use { c ->
         while (c.moveToNext()) out += Song(
             c.getLong(0), c.getString(1) ?: "Unknown",
